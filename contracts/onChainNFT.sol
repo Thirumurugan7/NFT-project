@@ -80,7 +80,11 @@ contract OnChainNFT is ERC721URIStorage, Ownable {
         returns (string memory)
     {
         string memory baseURL = "data:image/svg+xml;base64,";
-        string memory svgBase64Encoded = Base64.encode(bytes(abi.encodePacked(z[0],colors[1],z[1],z[2],z[3],colors[2],z[1],z[4],colors2[1],z[1],z[5],ze[0])));
+
+        uint256 combinedRandomness = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty,_tokenIds.current())));
+
+        uint256 randomCol = combinedRandomness % 25;
+        string memory svgBase64Encoded = Base64.encode(bytes(abi.encodePacked(z[0],colors[1],z[1],z[2],z[3],"#FFFFFF",z[1],z[4],colors2[1],z[1],z[5],ze[0])));
         return string(abi.encodePacked(baseURL, svgBase64Encoded));
     }
 
