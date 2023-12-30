@@ -15,6 +15,7 @@ import {Base64} from "./Base64.sol";
 
 contract OnChainNFT is ERC721URIStorage, Ownable {
     event Minted(uint256 tokenId);
+event randomColreurn(uint rand);
 
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
@@ -77,15 +78,25 @@ contract OnChainNFT is ERC721URIStorage, Ownable {
     /* Converts an SVG to Base64 string */
     function svgToImageURI()
         public
-        view
+        
         returns (string memory)
     {
         string memory baseURL = "data:image/svg+xml;base64,";
+      uint256 combinedRandomness = uint256(keccak256(abi.encodePacked(block.timestamp,_tokenIds.current())));
+        uint256 combinedRandomness1 = uint256(keccak256(abi.encodePacked(combinedRandomness,block.timestamp,_tokenIds.current())));
+        uint256 combinedRandomness2 = uint256(keccak256(abi.encodePacked(combinedRandomness1,block.timestamp,_tokenIds.current())));
 
-        // uint256 combinedRandomness = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty,_tokenIds.current())));
+        uint256 randomCol = combinedRandomness % 25;
+        uint256 randombgCol = combinedRandomness1 % 9;
+                uint256 randomFireCol = combinedRandomness2 % 25;
 
-        // uint256 randomCol = combinedRandomness % 25; //first color input is for background, second is for head&hand, third is for fire
-        string memory svgBase64Encoded = Base64.encode(bytes(abi.encodePacked(z[0],colors[10],z[1],z[2],colors2[4],z[1],z[3],colors[5],z[1],ze[0])));
+
+
+       emit randomColreurn(randomCol);
+       emit randomColreurn(randombgCol);
+       emit randomColreurn(randomFireCol);
+
+          string memory svgBase64Encoded = Base64.encode(bytes(abi.encodePacked(z[0],colors2[randombgCol],z[1],z[2],colors[randomCol],z[1],z[3],colors[randomFireCol],z[1],ze[0])));
         return string(abi.encodePacked(baseURL, svgBase64Encoded));
     }
 
