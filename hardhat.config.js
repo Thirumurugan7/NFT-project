@@ -3,11 +3,12 @@
  */
 require("dotenv").config();
 require("@nomiclabs/hardhat-ethers");
+require("@nomicfoundation/hardhat-verify");
 
 const { API_URL, PRIVATE_KEY } = process.env;
 
 module.exports = {
-  solidity: "0.8.4",
+  solidity: "0.8.22",
   defaultNetwork: "polygon_mumbai",
   networks: {
     hardhat: {},
@@ -20,4 +21,12 @@ module.exports = {
       accounts: [`0x${PRIVATE_KEY}`],
     }
   },
+  etherscan:{
+    apiKey:'PJSQNQFA1MT1ZG5HJGVU15NSKJQATA9QKM'
+  },
+  sourcify: {
+    enabled: false
+  }
+  
+
 };

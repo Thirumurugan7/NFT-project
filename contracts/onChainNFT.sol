@@ -6,19 +6,92 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
+
 
 /* 
     A library that provides a function for encoding some bytes in base64
     Source: https://github.com/zlayine/epic-game-buildspace/blob/master/contracts/libraries/Base64.sol
 */
-import {Base64} from "./Base64.sol";
 
-contract OnChainNFT is ERC721URIStorage, Ownable {
+
+library Base64 {
+    bytes internal constant TABLE =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    /// @notice Encodes some bytes to the base64 representation
+    function encode(bytes memory data) internal pure returns (string memory) {
+        uint256 len = data.length;
+        if (len == 0) return "";
+
+        // multiply by 4/3 rounded up
+        uint256 encodedLen = 4 * ((len + 2) / 3);
+
+        // Add some extra buffer at the end
+        bytes memory result = new bytes(encodedLen + 32);
+
+        bytes memory table = TABLE;
+
+        assembly {
+            let tablePtr := add(table, 1)
+            let resultPtr := add(result, 32)
+
+            for {
+                let i := 0
+            } lt(i, len) {
+
+            } {
+                i := add(i, 3)
+                let input := and(mload(add(data, i)), 0xffffff)
+
+                let out := mload(add(tablePtr, and(shr(18, input), 0x3F)))
+                out := shl(8, out)
+                out := add(
+                    out,
+                    and(mload(add(tablePtr, and(shr(12, input), 0x3F))), 0xFF)
+                )
+                out := shl(8, out)
+                out := add(
+                    out,
+                    and(mload(add(tablePtr, and(shr(6, input), 0x3F))), 0xFF)
+                )
+                out := shl(8, out)
+                out := add(
+                    out,
+                    and(mload(add(tablePtr, and(input, 0x3F))), 0xFF)
+                )
+                out := shl(224, out)
+
+                mstore(resultPtr, out)
+
+                resultPtr := add(resultPtr, 4)
+            }
+
+            switch mod(len, 3)
+            case 1 {
+                mstore(sub(resultPtr, 2), shl(240, 0x3d3d))
+            }
+            case 2 {
+                mstore(sub(resultPtr, 1), shl(248, 0x3d))
+            }
+
+            mstore(result, encodedLen)
+        }
+
+        return string(result);
+    }
+}
+
+
+contract OnChainNFT is ERC721URIStorage, Ownable,ERC2981 {
     event Minted(uint256 tokenId);
 event randomColreurn(uint rand);
 
+
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
+
+    
 
         uint256 public maxMintLimit = 100; // Set your desired maximum minting limit
 
@@ -27,7 +100,12 @@ event randomColreurn(uint rand);
         _;
     }
 
-    constructor() ERC721("OnChainNFT", "ONC") {}
+    uint96 fee = 10;
+
+    constructor() ERC721("OnChainNFT", "ONC") {
+            _setDefaultRoyalty(msg.sender, 100);
+
+    }
 //for face and fire and hand
      string[27] public colors = [
         "#00FF00",
@@ -58,7 +136,7 @@ event randomColreurn(uint rand);
         "#FFFF00"
     ];
 
-    //for backgrounf
+    //for background
   string[9] public colors2 = [
         "#000000",
         "#2200AA",
@@ -88,7 +166,7 @@ event randomColreurn(uint rand);
 
         uint256 randomCol = combinedRandomness % 25;
         uint256 randombgCol = combinedRandomness1 % 9;
-                uint256 randomFireCol = combinedRandomness2 % 25;
+        uint256 randomFireCol = combinedRandomness2 % 25;
 
 
 
@@ -100,6 +178,12 @@ event randomColreurn(uint rand);
         return string(abi.encodePacked(baseURL, svgBase64Encoded));
     }
 
+
+function supportsInterface(bytes4 interfaceId)
+  public view virtual override(ERC721URIStorage, ERC2981)
+  returns (bool) {
+    return super.supportsInterface(interfaceId);
+}
 
     /* Generates a tokenURI using Base64 string as the image */
     function formatTokenURI(string memory imageURI)
@@ -125,9 +209,20 @@ event randomColreurn(uint rand);
     }
 
 
-    /* Mints the token */
-    function mint() public hasMintPermission onlyOwner {
-        string memory imageURI = svgToImageURI();
+     /* Mints the token */
+    function mint(uint noofNFt)payable public hasMintPermission {
+           require(noofNFt > 0 && noofNFt <= 10, "Number of NFTs should be between 1 and 10");
+
+         uint mintPrice = 0.0069 ether;
+
+    // Calculate the expected value for the specified number of NFTs
+    uint expectedValue = mintPrice * noofNFt;
+
+    // Check if msg.value is equal to the expected value
+    require(msg.value == expectedValue, "Incorrect amount sent for minting");
+
+       for (uint i; i< noofNFt; i++){
+         string memory imageURI = svgToImageURI();
         string memory tokenURI = formatTokenURI(imageURI);
 
         _tokenIds.increment();
@@ -136,6 +231,12 @@ event randomColreurn(uint rand);
         _safeMint(msg.sender, newItemId);
         _setTokenURI(newItemId, tokenURI);
 
+              _setTokenRoyalty(newItemId, owner(), fee);
+
+
         emit Minted(newItemId);
+       }
+           payable(owner()).transfer(msg.value);
+
     }
 }
