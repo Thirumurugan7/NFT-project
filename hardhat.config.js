@@ -22,7 +22,7 @@ module.exports = {
     }
   },
   etherscan:{
-    apiKey:'PJSQNQFA1MT1ZG5HJGVU15NSKJQATA9QKM'
+    apiKey:'EBA8HK7X6JFJ34G4NJCUPFBNA1DERR2BTE'
   },
   sourcify: {
     enabled: false
